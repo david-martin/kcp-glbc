@@ -148,59 +148,59 @@ spec:
           "targets": [
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_request_total{issuer=\"letsencryptprod\",result=\"failed\", domain=\"\"}[$__range]))",
+              "expr": "sum(increase(glbc_tls_certificate_request_total{result=\"failed\"}[$__range])) by (issuer)",
               "format": "time_series",
               "hide": false,
               "instant": true,
               "interval": "",
-              "legendFormat": "Total ",
+              "legendFormat": "Total {{issuer}}",
               "refId": "A"
             },
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_request_total{issuer=\"letsencryptprod\",result=\"succeeded\"}[$__range])) by(issuer)",
+              "expr": "sum(increase(glbc_tls_certificate_request_total{result=\"succeeded\"}[$__range])) by(issuer)",
               "hide": false,
               "instant": true,
               "interval": "",
-              "legendFormat": "Total Succeeded ",
+              "legendFormat": "Total Succeeded {{issuer}}",
               "refId": "B"
             },
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_request_total{issuer=\"letsencryptprod\",result=\"failed\"}[$__range])) by (issuer)",
+              "expr": "sum(increase(glbc_tls_certificate_request_total{result=\"failed\"}[$__range])) by (issuer)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Total Failed ",
+              "legendFormat": "Total Failed {{issuer}}",
               "refId": "C"
             },
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_secret_count{issuer=\"letsencryptprod\"}[$__range])) ",
+              "expr": "sum(increase(glbc_tls_certificate_secret_count{}[$__range])) by (issuer)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Total Secrets",
+              "legendFormat": "Total Secrets {{issuer}}",
               "refId": "D"
             },
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_pending_request_count{issuer=\"letsencryptprod\"}[$__range])) by (issuer)",
+              "expr": "sum(increase(glbc_tls_certificate_pending_request_count{}[$__range])) by (issuer)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Total Pending",
+              "legendFormat": "Total Pending {{issuer}}",
               "refId": "E"
             },
             {
               "exemplar": true,
-              "expr": "sum(increase(glbc_tls_certificate_issuance_duration_seconds_bucket{issuer=\"letsencryptprod\"}[$__range])) - sum(increase(glbc_tls_certificate_issuance_duration_seconds_bucket{issuer=\"letsencryptprod\", le=\"300\"}[$__range]))",
+              "expr": "sum(increase(glbc_tls_certificate_issuance_duration_seconds_bucket{issuer=\"letsencryptprod\"}[1h])) by (issuer) - sum(increase(glbc_tls_certificate_issuance_duration_seconds_bucket{issuer=\"letsencryptprod\", le=\"300\"}[1h])) by (issuer)",
               "hide": false,
               "interval": "",
-              "legendFormat": "Total > 5mins",
+              "legendFormat": "Total > 5mins {{issuer}}",
               "refId": "F"
             }
           ],
           "timeFrom": null,
           "timeShift": null,
-          "title": "TLS Cert Requests (le prod)",
+          "title": "TLS Cert Requests",
           "type": "stat"
         },
         {
