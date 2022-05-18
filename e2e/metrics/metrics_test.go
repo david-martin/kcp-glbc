@@ -350,6 +350,7 @@ func TestMetrics(t *testing.T) {
 	))
 
 	// The other metrics should not be updated
+	// and the metric for the deleted ingress is no longer returned
 	test.Consistently(Metrics(test.Ctx()), 15*time.Second).Should(And(
 		HaveKey("glbc_tls_certificate_pending_request_count"),
 		WithTransform(Metric("glbc_tls_certificate_pending_request_count"), EqualP(
@@ -358,15 +359,6 @@ func TestMetrics(t *testing.T) {
 				Help: stringP("GLBC TLS certificate pending request count"),
 				Type: metricTypeP(prometheus.MetricType_GAUGE),
 				Metric: []*prometheus.Metric{
-					{
-						Label: []*prometheus.LabelPair{
-							label("hostname", hostname),
-							label("issuer", issuer),
-						},
-						Gauge: &prometheus.Gauge{
-							Value: float64P(0),
-						},
-					},
 					{
 						Label: []*prometheus.LabelPair{
 							label("hostname", domain),

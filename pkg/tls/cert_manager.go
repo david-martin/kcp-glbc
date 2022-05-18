@@ -164,6 +164,10 @@ func (cm *certManager) Create(ctx context.Context, cr CertificateRequest) error 
 func (cm *certManager) Delete(ctx context.Context, cr CertificateRequest) error {
 	// delete the certificate and delete the secrets
 	certNotFound := false
+
+	// remove metrics with matching labels
+	CertificateRequestCount.DeleteLabelValues(cm.IssuerID(), cr.Host())
+
 	if err := cm.certClient.Certificates(cm.certificateNS).Delete(ctx, cr.Name(), metav1.DeleteOptions{}); err != nil {
 		if !apierrors.IsNotFound(err) {
 			return err
