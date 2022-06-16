@@ -1,0 +1,3 @@
+match[]:
+  - 'console_url'
+  - 'cluster_version'
