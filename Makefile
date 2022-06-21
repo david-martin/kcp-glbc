@@ -210,7 +210,6 @@ gen-metrics-docs:
 verify-gen-metrics-docs: gen-metrics-docs
 	git diff --exit-code
 
-
 DHALL ?= $(LOCALBIN)/dhall
 DHALL_TO_YAML ?= $(LOCALBIN)/dhall-to-yaml
 DHALL_TO_JSON ?= $(LOCALBIN)/dhall-to-json
@@ -237,11 +236,11 @@ $(DHALL):
 DHALL_SOURCE_DIR := config/observability/monitoring_resources
 DHALL_COMMON_SOURCE_DIR := $(DHALL_SOURCE_DIR)/common
 DHALL_K8S_SOURCE_DIR := $(DHALL_SOURCE_DIR)/kubernetes
-DHALL_OPENSHIFT_SOURCE_DIR := $(DHALL_SOURCE_DIR)/openshift
+# DHALL_OPENSHIFT_SOURCE_DIR := $(DHALL_SOURCE_DIR)/openshift
 DHALL_K8S_TARGET_DIR := config/observability/kubernetes/monitoring_resources
-DHALL_OPENSHIFT_TARGET_DIR := config/observability/openshift/monitoring_resources
+# DHALL_OPENSHIFT_TARGET_DIR := config/observability/openshift/monitoring_resources
 DHALL_K8S_TARGETS := $(addprefix $(DHALL_K8S_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_COMMON_SOURCE_DIR)/*.dhall | xargs -n 1 basename))) $(addprefix $(DHALL_K8S_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_K8S_SOURCE_DIR)/*.dhall | xargs -n 1 basename)))
-DHALL_OPENSHIFT_TARGETS := $(addprefix $(DHALL_OPENSHIFT_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_COMMON_SOURCE_DIR)/*.dhall | xargs -n 1 basename))) $(addprefix $(DHALL_OPENSHIFT_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_OPENSHIFT_SOURCE_DIR)/*.dhall | xargs -n 1 basename)))
+# DHALL_OPENSHIFT_TARGETS := $(addprefix $(DHALL_OPENSHIFT_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_COMMON_SOURCE_DIR)/*.dhall | xargs -n 1 basename))) $(addprefix $(DHALL_OPENSHIFT_TARGET_DIR)/,$(patsubst %.dhall,%.yaml,$(shell ls $(DHALL_OPENSHIFT_SOURCE_DIR)/*.dhall | xargs -n 1 basename)))
 
 define GENERATE_DHALL
 	$(DHALL) format $<
@@ -251,28 +250,28 @@ endef
 $(DHALL_K8S_TARGET_DIR)/%.yaml: $(DHALL_COMMON_SOURCE_DIR)/%.dhall
 	$(GENERATE_DHALL)
 
-$(DHALL_OPENSHIFT_TARGET_DIR)/%.yaml: $(DHALL_COMMON_SOURCE_DIR)/%.dhall
-	$(GENERATE_DHALL)
+# $(DHALL_OPENSHIFT_TARGET_DIR)/%.yaml: $(DHALL_COMMON_SOURCE_DIR)/%.dhall
+# 	$(GENERATE_DHALL)
 
 $(DHALL_K8S_TARGET_DIR)/%.yaml: $(DHALL_K8S_SOURCE_DIR)/%.dhall
 	$(GENERATE_DHALL)
 
-$(DHALL_OPENSHIFT_TARGET_DIR)/%.yaml: $(DHALL_OPENSHIFT_SOURCE_DIR)/%.dhall
-	$(GENERATE_DHALL)
+# $(DHALL_OPENSHIFT_TARGET_DIR)/%.yaml: $(DHALL_OPENSHIFT_SOURCE_DIR)/%.dhall
+# 	$(GENERATE_DHALL)
 
 $(DHALL_K8S_TARGETS): | $(DHALL_K8S_TARGET_DIR)
 
-$(DHALL_OPENSHIFT_TARGETS): | $(DHALL_OPENSHIFT_TARGET_DIR)
+# $(DHALL_OPENSHIFT_TARGETS): | $(DHALL_OPENSHIFT_TARGET_DIR)
 
 $(DHALL_K8S_TARGET_DIR):
 	mkdir $(DHALL_K8S_TARGET_DIR)
 
-$(DHALL_OPENSHIFT_TARGET_DIR):
-	mkdir $(DHALL_OPENSHIFT_TARGET_DIR)
+# $(DHALL_OPENSHIFT_TARGET_DIR):
+# 	mkdir $(DHALL_OPENSHIFT_TARGET_DIR)
 
 # Generate monitoring resources for prometheus etc... 
 .PHONY: gen-monitoring-resources
-gen-monitoring-resources: ${DHALL_K8S_TARGETS} ${DHALL_OPENSHIFT_TARGETS}
+gen-monitoring-resources: dhall ${DHALL_K8S_TARGETS} ${DHALL_OPENSHIFT_TARGETS}
 
 # Ensure the generated monitoring resources are the latest
 .PHONY: verify-gen-monitoring-resources
