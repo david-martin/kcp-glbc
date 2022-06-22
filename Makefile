@@ -221,6 +221,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
 	DHALL_TO_YAML_BINARY=$(DHALL_TO_YAML_BINARY_LINUX)
 	DHALL_BINARY=$(DHALL_BINARY_LINUX)
+	DHALL_TAR_WILDCARD=--wildcards
 endif
 ifeq ($(UNAME_S),Darwin)
 	DHALL_TO_YAML_BINARY=$(DHALL_TO_YAML_BINARY_MACOS)
@@ -230,8 +231,8 @@ endif
 .PHONY: dhall
 dhall: $(DHALL) ## Download dhall locally if necessary.
 $(DHALL):
-	curl -L $(DHALL_TO_YAML_BINARY) | tar --extract --bzip2 'bin/*'
-	curl -L $(DHALL_BINARY) | tar --extract --bzip2 'bin/*'
+	curl -L $(DHALL_TO_YAML_BINARY) | tar --extract --bzip2 $(DHALL_TAR_WILDCARD) 'bin/*'
+	curl -L $(DHALL_BINARY) | tar --extract --bzip2 $(DHALL_TAR_WILDCARD) 'bin/*'
 
 DHALL_SOURCE_DIR := config/observability/monitoring_resources
 DHALL_COMMON_SOURCE_DIR := $(DHALL_SOURCE_DIR)/common
