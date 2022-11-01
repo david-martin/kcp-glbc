@@ -153,6 +153,8 @@ func (a *Ingress) GetSpec() interface{} {
 func (a *Ingress) Transform(old Interface) error {
 	oldIngress := old.(*Ingress)
 	patches := []patch{}
+	ingressSpecificPatches := make(map[string][]patch)
+
 	if a.Spec.Rules != nil && !equality.Semantic.DeepEqual(a.Spec.Rules, oldIngress.Spec.Rules) {
 		rulesPatch := patch{
 			OP:    "replace",
@@ -160,6 +162,27 @@ func (a *Ingress) Transform(old Interface) error {
 			Value: a.Spec.Rules,
 		}
 		patches = append(patches, rulesPatch)
+
+		// Check for migration annotation to apply skupper service rules patch
+		for annotationName, _ := range a.ObjectMeta.Annotations {
+			if strings.HasPrefix(annotationName, "migration.kuadrant.dev/") {
+				syncTarget := strings.Split(annotationName, "/")[1]
+				patchRules := []networkingv1.IngressRule{}
+
+				ingressCopy := a.DeepCopy()
+				for _, rule := range ingressCopy.Spec.Rules {
+					for _, path := range rule.HTTP.Paths {
+						path.Backend.Service.Name = path.Backend.Service.Name + "-cluster2-via-skupper"
+					}
+					patchRules = append(patchRules, rule)
+				}
+				ingressSpecificPatches[syncTarget] = []patch{{
+					OP:    "replace",
+					Path:  "/rules",
+					Value: patchRules,
+				}}
+			}
+		}
 	}
 	if a.Spec.TLS != nil && !equality.Semantic.DeepEqual(a.Spec.TLS, oldIngress.Spec.TLS) {
 		tlsPatch := patch{
@@ -168,8 +191,12 @@ func (a *Ingress) Transform(old Interface) error {
 			Value: a.Spec.TLS,
 		}
 		patches = append(patches, tlsPatch)
+		// also add it to any ingress specific patches
+		for syncTarget, iPatches := range ingressSpecificPatches {
+			ingressSpecificPatches[syncTarget] = append(iPatches, tlsPatch)
+		}
 	}
-	if err := applyTransformPatches(patches, a); err != nil {
+	if err := applyTransformPatches(patches, ingressSpecificPatches, a); err != nil {
 		return err
 	}
 	// ensure we don't modify the actual spec (TODO TMC once transforms are default remove this check)

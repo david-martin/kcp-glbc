@@ -79,7 +79,7 @@ func (a *Route) Transform(previous Interface) error {
 		Value: a.Spec.TLS,
 	}
 	patches := []patch{hostPatch, tlsPatch}
-	if err := applyTransformPatches(patches, a); err != nil {
+	if err := applyTransformPatches(patches, nil, a); err != nil {
 		return err
 	}
 	// ensure we don't modify the actual spec (TODO TMC once transforms are default remove this check)

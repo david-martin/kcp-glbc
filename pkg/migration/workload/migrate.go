@@ -2,6 +2,7 @@ package workload
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -22,7 +23,7 @@ const (
 	WorkloadDeletingAnnotation   = workload.InternalClusterDeletionTimestampAnnotationPrefix
 	SoftFinalizer                = "kuadrant.dev/glbc-migration"
 	DeleteAtAnnotation           = "kuadrant.dev/glbc-delete-at"
-	TTL                          = 60
+	TTL                          = 360
 )
 
 // Process this is a temporary solution for advanced scheduling. It will add soft finalizer annotations to a set of objects to delay their deletion.
@@ -86,13 +87,15 @@ func gracefulRemoveSoftFinalizers(obj metav1.Object, queue workqueue.RateLimitin
 				//badly formed deleteAt annotation, remove it, so it will be regenerated
 				metadata.RemoveAnnotation(obj, clusterDeleteAtAnnotation)
 			}
-
+			logger.Info(fmt.Sprintf("deleteAt=%d time.Now().Unix()=%d", int64(deleteAt), time.Now().Unix()))
 			if int64(deleteAt) <= time.Now().Unix() {
+				logger.Info(fmt.Sprintf("metadata.RemoveAnnotation %s %s", WorkloadClusterSoftFinalizer+"/"+clusterName, clusterDeleteAtAnnotation))
 				metadata.RemoveAnnotation(obj, WorkloadClusterSoftFinalizer+"/"+clusterName)
 				metadata.RemoveAnnotation(obj, clusterDeleteAtAnnotation)
 			} else {
 				//requeue object
 				queueFor := int64(deleteAt) - time.Now().Unix()
+				logger.Info(fmt.Sprintf("requeue queueFor=%d", queueFor))
 				key, err := cache.MetaNamespaceKeyFunc(obj)
 				if err != nil {
 					return

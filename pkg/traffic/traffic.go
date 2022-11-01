@@ -8,6 +8,7 @@ import (
 
 	workload "github.com/kcp-dev/kcp/pkg/apis/workload/v1alpha1"
 	"github.com/kcp-dev/logicalcluster/v2"
+	"github.com/kuadrant/kcp-glbc/pkg/_internal/log"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -105,20 +106,32 @@ func IsDomainVerified(host string, dvs []v1.DomainVerification) bool {
 	return IsDomainVerified(parentHostParts[1], dvs)
 }
 
-func applyTransformPatches(patches []patch, object Interface) error {
+func applyTransformPatches(patches []patch, ingressSpecificPatches map[string][]patch, object Interface) error {
+	log.Logger.Info(fmt.Sprintf("patches=%v ingressSpecificPatches=%v", patches, ingressSpecificPatches))
+	d, err := json.Marshal(patches)
+	if err != nil {
+		return fmt.Errorf("failed to marshal ingress transform patch %s", err)
+	}
 	// reset spec diffs
 	_, existingDiffs := metadata.HasAnnotationsContaining(object, workload.ClusterSpecDiffAnnotationPrefix)
 	for ek := range existingDiffs {
 		metadata.RemoveAnnotation(object, ek)
 	}
 	if len(patches) != 0 {
-		d, err := json.Marshal(patches)
 		if err != nil {
 			return fmt.Errorf("failed to marshal ingress transform patch %s", err)
 		}
 		// and spec diff for any sync target
 		for _, c := range object.GetSyncTargets() {
-			metadata.AddAnnotation(object, workload.ClusterSpecDiffAnnotationPrefix+c, string(d))
+			if ingressSpecificPatches[c] != nil {
+				specificPatch, err := json.Marshal(ingressSpecificPatches[c])
+				if err != nil {
+					return fmt.Errorf("failed to marshal ingress specific transform patch %s", err)
+				}
+				metadata.AddAnnotation(object, workload.ClusterSpecDiffAnnotationPrefix+c, string(specificPatch))
+			} else {
+				metadata.AddAnnotation(object, workload.ClusterSpecDiffAnnotationPrefix+c, string(d))
+			}
 		}
 	}
 
