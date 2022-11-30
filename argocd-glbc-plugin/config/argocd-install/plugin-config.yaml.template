@@ -20,5 +20,8 @@ data:
         command:
           - argocd-glbc-plugin
           - generate
-          - "."
+          - --url
+          - http://${GLBC_HOST}/transform
+          - --resolve
+          - ${GLBC_IP}:80
       lockRepo: false

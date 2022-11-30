@@ -24,6 +24,7 @@ import (
 	_ "github.com/kuadrant/kcp-glbc/pkg/reconciler"
 	"github.com/kuadrant/kcp-glbc/pkg/reconciler/route"
 	"github.com/kuadrant/kcp-glbc/pkg/traffic"
+	"github.com/kuadrant/kcp-glbc/pkg/transform_endpoint"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	genericapiserver "k8s.io/apiserver/pkg/server"
@@ -121,6 +122,7 @@ func init() {
 }
 
 var controllersGroup = sync.WaitGroup{}
+var endpointsGroup = sync.WaitGroup{}
 
 func main() {
 	// Logging GLBC configuration
@@ -193,6 +195,7 @@ func main() {
 
 	var apiExportClusterInformers []APIExportClusterInformers
 	var controllers []Controller
+
 	for _, name := range apiExportNames {
 		glbcAPIExport, err := kcpClient.Cluster(logicalcluster.New(options.GLBCWorkspace)).ApisV1alpha1().APIExports().Get(ctx, name, metav1.GetOptions{})
 		exitOnError(err, "Failed to get GLBC APIExport "+name)
@@ -337,10 +340,22 @@ func main() {
 		clusterInformers.KCPDynamicInformerFactory.WaitForCacheSync(ctx.Done())
 	}
 
-	certificateInformerFactory.Start(ctx.Done())
-	certificateInformerFactory.WaitForCacheSync(ctx.Done())
 	glbcKubeInformerFactory.Start(ctx.Done())
 	glbcKubeInformerFactory.WaitForCacheSync(ctx.Done())
+	certificateInformerFactory.Start(ctx.Done())
+	certificateInformerFactory.WaitForCacheSync(ctx.Done())
+
+	endpointsGroup.Add(1)
+	srv, err := transform_endpoint.NewServer(8090)
+	exitOnError(err, "Failed to create transform endpoint server")
+
+	go func() {
+		defer endpointsGroup.Done()
+		err := srv.Start(gCtx)
+		if err != nil {
+			log.Logger.Error(err, "transform endpoint exited with error")
+		}
+	}()
 
 	for _, controller := range controllers {
 		start(gCtx, controller)
@@ -349,6 +364,7 @@ func main() {
 	g.Go(func() error {
 		// wait until the controllers have return before stopping serving metrics
 		controllersGroup.Wait()
+		endpointsGroup.Wait()
 		return metricsServer.Shutdown()
 	})
 
